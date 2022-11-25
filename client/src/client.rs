@@ -274,26 +274,53 @@ pub trait RpcApi: Sized {
         self.call("unloadwallet", handle_defaults(&mut args, &[null()])).await
     }
 
+    /// Creates and loads a new wallet.
+    ///
+    /// Arguments:
+    /// 1. wallet_name             (string, required) The name for the new wallet. If this is a
+    ///                            path, the wallet will be created at the path location.
+    /// 2. disable_private_keys    (boolean, optional, default=false) Disable the possibility of
+    ///                            private keys (only watchonlys are possible in this mode).
+    /// 3. blank                   (boolean, optional, default=false) Create a blank wallet. A
+    ///                            blank wallet has no keys or HD seed. One can be set using
+    ///                            sethdseed.
+    /// 4. passphrase              (string, optional) Encrypt the wallet with this passphrase.
+    /// 5. avoid_reuse             (boolean, optional, default=false) Keep track of coin reuse, and
+    ///                            treat dirty and clean coins differently with privacy
+    ///                            considerations in mind.
+    /// 6. descriptors             (boolean, optional, default=true) Create a native descriptor
+    ///                            wallet. The wallet will use descriptors internally to handle
+    ///                            address creation
+    /// 7. load_on_startup         (boolean, optional) Save wallet name to persistent settings and
+    ///                            load on startup. True to add wallet to startup list, false to
+    ///                            remove, null to leave unchanged.
+    /// 8. external_signer         (boolean, optional, default=false) Use an external signer such
+    ///                            as a hardware wallet. Requires -signer to be configured. Wallet
+    ///                            creation will fail if keys cannot be fetched. Requires
+    ///                            disable_private_keys and descriptors set to true.
+    #[cfg_attr(feature = "cargo-clippy", allow(too_many_arguments))]
     async fn create_wallet(
         &self,
-        wallet: &str,
+        wallet_name: &str,
         disable_private_keys: Option<bool>,
         blank: Option<bool>,
         passphrase: Option<&str>,
         avoid_reuse: Option<bool>,
+        descriptors: Option<bool>,
+        load_on_startup: Option<bool>,
+        external_signer: Option<bool>,
     ) -> Result<json::LoadWalletResult> {
         let mut args = [
-            wallet.into(),
+            wallet_name.into(),
             opt_into_json(disable_private_keys)?,
             opt_into_json(blank)?,
             opt_into_json(passphrase)?,
             opt_into_json(avoid_reuse)?,
+            opt_into_json(descriptors)?,
+            opt_into_json(load_on_startup)?,
+            opt_into_json(external_signer)?,
         ];
-        self.call(
-            "createwallet",
-            handle_defaults(&mut args, &[false.into(), false.into(), into_json("")?, false.into()]),
-        )
-        .await
+        self.call("createwallet", handle_defaults(&mut args, &[])).await
     }
 
     async fn list_wallets(&self) -> Result<Vec<String>> {

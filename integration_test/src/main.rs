@@ -120,7 +120,8 @@ async fn main() {
     unsafe { VERSION = cl.version().await.unwrap() };
     println!("Version: {}", version());
 
-    cl.create_wallet("testwallet", None, None, None, None).await.unwrap();
+    // Must set descriptor=false for tests to work
+    cl.create_wallet("testwallet", None, None, None, None, Some(false), None, None).await.unwrap();
 
     test_get_mining_info(&cl).await;
     test_get_blockchain_info(&cl).await;
@@ -953,6 +954,7 @@ async fn test_create_wallet(cl: &Client) {
     }
 
     for wallet_param in wallet_params {
+        // Must set descriptor=false for tests to work
         let result = cl
             .create_wallet(
                 wallet_param.name,
@@ -960,6 +962,9 @@ async fn test_create_wallet(cl: &Client) {
                 wallet_param.blank,
                 wallet_param.passphrase,
                 wallet_param.avoid_reuse,
+                Some(false),
+                None,
+                None,
             )
             .await
             .unwrap();
