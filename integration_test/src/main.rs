@@ -77,6 +77,17 @@ macro_rules! assert_not_found {
     };
 }
 
+/// Assert that the call returns the specified error message.
+macro_rules! assert_error_message {
+    ($call:expr, $code:expr, $msg:expr) => {
+        match $call.await.unwrap_err() {
+            Error::JsonRpc(JsonRpcError::Rpc(ref e))
+                if e.code == $code && e.message.contains($msg) => {}
+            e => panic!("expected '{}' error for {}, got: {}", $msg, stringify!($call), e),
+        }
+    };
+}
+
 static mut VERSION: usize = 0;
 /// Get the version of the node that is running.
 fn version() -> usize {
@@ -232,7 +243,9 @@ async fn test_generate(cl: &Client) {
     } else if version() < 210000 {
         assert_not_found!(cl.generate(5, None));
     } else {
-        assert_not_found!(cl.generate(5, None));
+        // Bitcoin Core v0.21 appears to return this with a generic -1 error code,
+        // rather than the expected -32601 code (RPC_METHOD_NOT_FOUND).
+        assert_error_message!(cl.generate(5, None), -1, "replaced by the -generate cli option");
     }
 }
 
